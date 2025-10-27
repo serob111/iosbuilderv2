@@ -2,11 +2,6 @@ name: Capacitor iOS IPA Builder (Unsigned)
 
 on:
   workflow_dispatch:
-    inputs:
-      reason:
-        description: 'Reason for dispatch (e.g., "Web content update via API")'
-        required: false
-        default: 'Automated content update and build.'
 
 jobs:
   build_ios_ipa:
@@ -24,20 +19,16 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           npm install @capacitor/core @capacitor/ios
-
-      - name: 🛠️ Install Capacitor CLI globally
-        run: npm install -g @capacitor/cli
+          npm install -g @capacitor/cli
 
       - name: 📝 Create Capacitor Config
         run: |
-          if [ ! -f capacitor.config.json ]; then
-            echo '{
-              "appId": "com.ipa.builder",
-              "appName": "IPABuilderApp",
-              "webDir": "www",
-              "bundledWebRuntime": false
-            }' > capacitor.config.json
-          fi
+          echo '{
+            "appId": "com.ipa.builder",
+            "appName": "IPABuilderApp",
+            "webDir": "www",
+            "bundledWebRuntime": false
+          }' > capacitor.config.json
 
       - name: ➕ Add iOS Platform
         run: npx cap add ios
@@ -51,55 +42,35 @@ jobs:
       - name: 🏗️ Pod Install (iOS)
         run: cd ios/App && pod install --repo-update
 
-      - name: 🍎 Build Unsigned iOS IPA
+      - name: 🍎 Build iOS (Unsigned IPA manually)
         run: |
-          # 1️⃣ Archive (no signing, no team)
-          xcodebuild archive \
+          # 1️⃣ Build the .app (no signing)
+          xcodebuild \
             -workspace ios/App/App.xcworkspace \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
-            -archivePath build/App.xcarchive \
+            BUILD_DIR=$(pwd)/build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="-" \
             PROVISIONING_PROFILE_SPECIFIER="" \
             DEVELOPMENT_TEAM=""
 
-          # 2️⃣ Export unsigned IPA (modern method: 'debugging')
-          echo '<?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>debugging</string>
-              <key>stripSwiftSymbols</key>
-              <true/>
-              <key>uploadSymbols</key>
-              <false/>
-              <key>destination</key>
-              <string>export</string>
-              <key>signingStyle</key>
-              <string>manual</string>
-              <key>compileBitcode</key>
-              <false/>
-          </dict>
-          </plist>' > exportOptions.plist
+          # 2️⃣ Find built .app
+          APP_PATH=$(find ios/App/build/Release-iphoneos -name "*.app" | head -n 1)
+          echo "✅ Found app at: $APP_PATH"
 
-          # 3️⃣ Export IPA
-          xcodebuild -exportArchive \
-            -archivePath build/App.xcarchive \
-            -exportOptionsPlist exportOptions.plist \
-            -exportPath build/ipa
+          # 3️⃣ Create Payload folder (structure required for .ipa)
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
 
-          # 4️⃣ Check IPA exists
-          if [ ! -f build/ipa/App.ipa ]; then
-            echo "❌ IPA not created. Build failed."
-            exit 1
-          fi
+          # 4️⃣ Zip into IPA
+          zip -r MyApp_unsigned.ipa Payload
 
-          # 5️⃣ Rename IPA
-          mv build/ipa/App.ipa build/ipa/MyApp_unsigned.ipa
+          # 5️⃣ Move to build output
+          mkdir -p build/ipa
+          mv MyApp_unsigned.ipa build/ipa/
 
       - name: ⬆️ Upload IPA Artifact
         uses: actions/upload-artifact@v4

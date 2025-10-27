@@ -30,6 +30,11 @@ jobs:
           # FIX: Removed 'npm run build' as it's missing in package.json and the HTML content is
           # already committed directly to 'www/index.html' by the backend server.
 
+      # FIX: Explicitly install Capacitor CLI globally to ensure 'cap' is found by npx/the shell,
+      # resolving the "could not determine executable to run" error.
+      - name: 🛠️ Install Capacitor CLI globally
+        run: npm install -g @capacitor/cli
+
       - name: 🛠️ Install CocoaPods
         run: gem install cocoapods
 

@@ -35,6 +35,19 @@ jobs:
       - name: 🛠️ Install Capacitor CLI globally
         run: npm install -g @capacitor/cli
 
+      # FIX: Add a step to ensure a valid capacitor.config.json exists with the required appId.
+      # This resolves the "Missing appId for new platform" error.
+      - name: 📝 Create Capacitor Config
+        run: |
+          if [ ! -f capacitor.config.json ]; then
+            echo '{
+              "appId": "com.ipa.builder",
+              "appName": "IPABuilderApp",
+              "webDir": "www",
+              "bundledWebRuntime": false
+            }' > capacitor.config.json
+          fi
+
       # FIX: Added 'cap add ios' to create the necessary 'ios' native project structure,
       # resolving the "ios platform has not been added yet" error.
       - name: ➕ Add iOS Platform

@@ -75,13 +75,13 @@ jobs:
             CODE_SIGN_IDENTITY=""
 
           # 2. Create the ExportOptions.plist for Unsigned Export
-          # The 'teamID' key is omitted to prevent the "should be non-empty" error
+          # FIX: Changed method to 'none' to fully bypass all signing checks.
           echo '<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>method</key>
-              <string>development</string>
+              <string>none</string>
               <key>stripSwiftSymbols</key>
               <true/>
               <key>uploadSymbols</key>

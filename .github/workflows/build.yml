@@ -44,13 +44,16 @@ jobs:
 
       - name: 🍎 Build iOS (Unsigned IPA manually)
         run: |
+          BUILD_DIR=$(pwd)/build
+          mkdir -p $BUILD_DIR
+
           # 1️⃣ Build the .app (no signing)
           xcodebuild \
             -workspace ios/App/App.xcworkspace \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
-            BUILD_DIR=$(pwd)/build \
+            BUILD_DIR="$BUILD_DIR" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="-" \
@@ -58,10 +61,15 @@ jobs:
             DEVELOPMENT_TEAM=""
 
           # 2️⃣ Find built .app
-          APP_PATH=$(find ios/App/build/Release-iphoneos -name "*.app" | head -n 1)
+          APP_PATH=$(find $BUILD_DIR/Release-iphoneos -name "*.app" | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "❌ ERROR: .app not found. Build likely failed."
+            exit 1
+          fi
           echo "✅ Found app at: $APP_PATH"
 
           # 3️⃣ Create Payload folder (structure required for .ipa)
+          rm -rf Payload
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
 

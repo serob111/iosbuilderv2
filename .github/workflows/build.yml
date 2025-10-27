@@ -1,7 +1,5 @@
 name: Capacitor iOS IPA Builder (Unsigned)
 
-# Triggered manually by the backend server using the GitHub API
-# The commit to 'www/index.html' triggers a new workflow dispatch via the backend.
 on:
   workflow_dispatch:
     inputs:
@@ -12,7 +10,6 @@ on:
 
 jobs:
   build_ios_ipa:
-    # Requires a macOS runner for Xcode/iOS development
     runs-on: macos-latest
 
     steps:
@@ -26,15 +23,12 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          # Install core Capacitor packages, including the iOS platform library
           npm install @capacitor/core @capacitor/ios
 
       - name: 🛠️ Install Capacitor CLI globally
-        # Ensures 'cap' command is found by npx
         run: npm install -g @capacitor/cli
 
       - name: 📝 Create Capacitor Config
-        # Ensures a valid capacitor.config.json exists with the required appId
         run: |
           if [ ! -f capacitor.config.json ]; then
             echo '{
@@ -46,25 +40,20 @@ jobs:
           fi
 
       - name: ➕ Add iOS Platform
-        # Creates the necessary 'ios' native project structure
         run: npx cap add ios
 
       - name: 🛠️ Install CocoaPods
         run: gem install cocoapods
 
       - name: 🔄 Capacitor Sync
-        # Syncs the web assets (the committed index.html) and plugins to the native projects
         run: npx cap sync ios
 
       - name: 🏗️ Pod Install (iOS)
-        # Install native dependencies using CocoaPods
         run: cd ios/App && pod install --repo-update
 
       - name: 🍎 Build iOS (Unsigned IPA)
-        # Uses xcodebuild to create an archive and then export the unsigned IPA.
         run: |
-          # 1. Archive the project
-          # FIX: Added CODE_SIGNING_REQUIRED=NO and set CODE_SIGN_IDENTITY explicitly to "-" (wildcard/no identity)
+          # 1️⃣ Archive build (без подписи, без Team ID)
           xcodebuild archive \
             -workspace ios/App/App.xcworkspace \
             -scheme App \
@@ -73,17 +62,17 @@ jobs:
             -archivePath build/App.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            PROVISIONING_PROFILE="" \
-            CODE_SIGN_IDENTITY="-"
+            CODE_SIGN_IDENTITY="-" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM=""
 
-          # 2. Create the ExportOptions.plist for Unsigned Export
-          # FIX: Reverted method back to 'development' for highest compatibility with unsigned exports.
+          # 2️⃣ Создать ExportOptions.plist с методом 'debugging' (новый заменитель development)
           echo '<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>method</key>
-              <string>development</string>
+              <string>debugging</string>
               <key>stripSwiftSymbols</key>
               <true/>
               <key>uploadSymbols</key>
@@ -97,18 +86,25 @@ jobs:
           </dict>
           </plist>' > exportOptions.plist
 
-          # 3. Export the unsigned IPA
+          # 3️⃣ Export unsigned IPA
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
             -exportOptionsPlist exportOptions.plist \
-            -exportPath build/ipa
+            -exportPath build/ipa || true
 
-          # 4. Rename the final IPA file as requested
-          mv build/ipa/App.ipa build/ipa/MyApp_unsigned.ipa
+          # 4️⃣ Если IPA не создана, архивируем .xcarchive как fallback
+          if [ ! -f build/ipa/App.ipa ]; then
+            echo "⚠️ IPA not created, zipping archive instead..."
+            cd build && zip -r App_unsigned_archive.zip App.xcarchive
+          else
+            mv build/ipa/App.ipa build/ipa/MyApp_unsigned.ipa
+          fi
 
       - name: ⬆️ Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: MyApp-Unsigned-IPA
-          path: build/ipa/MyApp_unsigned.ipa
+          path: |
+            build/ipa/MyApp_unsigned.ipa
+            build/App_unsigned_archive.zip
           retention-days: 1

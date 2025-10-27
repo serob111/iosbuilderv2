@@ -27,13 +27,14 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           npm install
-          npm run build # Assuming a build script populates the 'www' folder
+          # FIX: Removed 'npm run build' as it's missing in package.json and the HTML content is
+          # already committed directly to 'www/index.html' by the backend server.
 
       - name: 🛠️ Install CocoaPods
         run: gem install cocoapods
 
       - name: 🔄 Capacitor Sync
-        # Syncs the web assets and plugins to the native projects
+        # Syncs the web assets (the newly committed index.html) and plugins to the native projects
         run: npx cap sync ios
 
       - name: 🏗️ Pod Install (iOS)

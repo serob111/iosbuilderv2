@@ -1,0 +1,90 @@
+name: Capacitor iOS IPA Builder (Unsigned)
+
+# Triggered manually by the backend server using the GitHub API
+# The commit to 'www/index.html' triggers a new workflow dispatch via the backend.
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for dispatch (e.g., "Web content update via API")'
+        required: false
+        default: 'Automated content update and build.'
+
+jobs:
+  build_ios_ipa:
+    # Requires a macOS runner for Xcode/iOS development
+    runs-on: macos-latest
+
+    steps:
+      - name: 📥 Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm install
+          npm run build # Assuming a build script populates the 'www' folder
+
+      - name: 🛠️ Install CocoaPods
+        run: gem install cocoapods
+
+      - name: 🔄 Capacitor Sync
+        # Syncs the web assets and plugins to the native projects
+        run: npx cap sync ios
+
+      - name: 🏗️ Pod Install (iOS)
+        # Install native dependencies using CocoaPods
+        run: cd ios/App && pod install --repo-update
+
+      - name: 🍎 Build iOS (Unsigned IPA)
+        # Use Xcode's xcodebuild to create an Archive and then export the IPA.
+        # This uses the 'development' method which does not require signing credentials.
+        run: |
+          # 1. Archive the project
+          xcodebuild archive \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/App.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            PROVISIONING_PROFILE="" \
+            CODE_SIGN_IDENTITY=""
+
+          # 2. Create the ExportOptions.plist for Unsigned Export
+          echo '<?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>development</string>
+              <key>teamID</key>
+              <string></string>
+              <key>stripSwiftSymbols</key>
+              <true/>
+              <key>uploadSymbols</key>
+              <false/>
+              <key>destination</key>
+              <string>export</string>
+          </dict>
+          </plist>' > exportOptions.plist
+
+          # 3. Export the unsigned IPA
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath build/ipa
+
+          # 4. Rename the final IPA file as requested
+          mv build/ipa/App.ipa build/ipa/MyApp_unsigned.ipa
+
+      - name: ⬆️ Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyApp-Unsigned-IPA
+          path: build/ipa/MyApp_unsigned.ipa
+          retention-days: 1

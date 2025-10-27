@@ -35,6 +35,11 @@ jobs:
       - name: 🛠️ Install Capacitor CLI globally
         run: npm install -g @capacitor/cli
 
+      # FIX: Added 'cap add ios' to create the necessary 'ios' native project structure,
+      # resolving the "ios platform has not been added yet" error.
+      - name: ➕ Add iOS Platform
+        run: npx cap add ios
+
       - name: 🛠️ Install CocoaPods
         run: gem install cocoapods
 

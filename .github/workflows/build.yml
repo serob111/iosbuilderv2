@@ -64,6 +64,7 @@ jobs:
         # Uses xcodebuild to create an archive and then export the unsigned IPA.
         run: |
           # 1. Archive the project
+          # FIX: Added CODE_SIGNING_REQUIRED=NO and set CODE_SIGN_IDENTITY explicitly to "-" (wildcard/no identity)
           xcodebuild archive \
             -workspace ios/App/App.xcworkspace \
             -scheme App \
@@ -71,18 +72,18 @@ jobs:
             -sdk iphoneos \
             -archivePath build/App.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             PROVISIONING_PROFILE="" \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="-"
 
           # 2. Create the ExportOptions.plist for Unsigned Export
-          # FIX: Changed method to the non-deprecated 'release-testing' (ad-hoc equivalent).
-          # Removed the empty provisioningProfiles dict, which was causing issues.
+          # FIX: Reverted method back to 'development' for highest compatibility with unsigned exports.
           echo '<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>method</key>
-              <string>release-testing</string>
+              <string>development</string>
               <key>stripSwiftSymbols</key>
               <true/>
               <key>uploadSymbols</key>

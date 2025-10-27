@@ -75,13 +75,14 @@ jobs:
             CODE_SIGN_IDENTITY=""
 
           # 2. Create the ExportOptions.plist for Unsigned Export
-          # FIX: Changed method to 'none' to fully bypass all signing checks.
+          # FIX: Reverting method to 'development' (alias for debugging), which is a valid Xcode export method, 
+          # while relying on the unsigned archive creation flags (step 1) to skip actual signing.
           echo '<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>method</key>
-              <string>none</string>
+              <string>development</string>
               <key>stripSwiftSymbols</key>
               <true/>
               <key>uploadSymbols</key>

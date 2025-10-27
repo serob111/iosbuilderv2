@@ -26,19 +26,15 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          # FIX: Explicitly install the core iOS platform package along with other dependencies
+          # Install core Capacitor packages, including the iOS platform library
           npm install @capacitor/core @capacitor/ios
-          # FIX: Removed 'npm run build' as it's missing in package.json and the HTML content is
-          # already committed directly to 'www/index.html' by the backend server.
 
-      # FIX: Explicitly install Capacitor CLI globally to ensure 'cap' is found by npx/the shell,
-      # resolving the "could not determine executable to run" error.
       - name: 🛠️ Install Capacitor CLI globally
+        # Ensures 'cap' command is found by npx
         run: npm install -g @capacitor/cli
 
-      # FIX: Add a step to ensure a valid capacitor.config.json exists with the required appId.
-      # This resolves the "Missing appId for new platform" error.
       - name: 📝 Create Capacitor Config
+        # Ensures a valid capacitor.config.json exists with the required appId
         run: |
           if [ ! -f capacitor.config.json ]; then
             echo '{
@@ -49,16 +45,15 @@ jobs:
             }' > capacitor.config.json
           fi
 
-      # FIX: Added 'cap add ios' to create the necessary 'ios' native project structure,
-      # resolving the "ios platform has not been added yet" error.
       - name: ➕ Add iOS Platform
+        # Creates the necessary 'ios' native project structure
         run: npx cap add ios
 
       - name: 🛠️ Install CocoaPods
         run: gem install cocoapods
 
       - name: 🔄 Capacitor Sync
-        # Syncs the web assets (the newly committed index.html) and plugins to the native projects
+        # Syncs the web assets (the committed index.html) and plugins to the native projects
         run: npx cap sync ios
 
       - name: 🏗️ Pod Install (iOS)
@@ -66,8 +61,7 @@ jobs:
         run: cd ios/App && pod install --repo-update
 
       - name: 🍎 Build iOS (Unsigned IPA)
-        # Use Xcode's xcodebuild to create an Archive and then export the IPA.
-        # This uses the 'development' method which does not require signing credentials.
+        # Uses xcodebuild to create an archive and then export the unsigned IPA.
         run: |
           # 1. Archive the project
           xcodebuild archive \
@@ -81,14 +75,13 @@ jobs:
             CODE_SIGN_IDENTITY=""
 
           # 2. Create the ExportOptions.plist for Unsigned Export
+          # The 'teamID' key is omitted to prevent the "should be non-empty" error
           echo '<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>method</key>
               <string>development</string>
-              <key>teamID</key>
-              <string></string>
               <key>stripSwiftSymbols</key>
               <true/>
               <key>uploadSymbols</key>

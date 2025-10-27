@@ -51,9 +51,9 @@ jobs:
       - name: 🏗️ Pod Install (iOS)
         run: cd ios/App && pod install --repo-update
 
-      - name: 🍎 Build iOS (Unsigned IPA)
+      - name: 🍎 Build Unsigned iOS IPA
         run: |
-          # 1️⃣ Archive build (без подписи, без Team ID)
+          # 1️⃣ Archive (no signing, no team)
           xcodebuild archive \
             -workspace ios/App/App.xcworkspace \
             -scheme App \
@@ -66,7 +66,7 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="" \
             DEVELOPMENT_TEAM=""
 
-          # 2️⃣ Создать ExportOptions.plist с методом 'debugging' (новый заменитель development)
+          # 2️⃣ Export unsigned IPA (modern method: 'debugging')
           echo '<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -86,25 +86,24 @@ jobs:
           </dict>
           </plist>' > exportOptions.plist
 
-          # 3️⃣ Export unsigned IPA
+          # 3️⃣ Export IPA
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
             -exportOptionsPlist exportOptions.plist \
-            -exportPath build/ipa || true
+            -exportPath build/ipa
 
-          # 4️⃣ Если IPA не создана, архивируем .xcarchive как fallback
+          # 4️⃣ Check IPA exists
           if [ ! -f build/ipa/App.ipa ]; then
-            echo "⚠️ IPA not created, zipping archive instead..."
-            cd build && zip -r App_unsigned_archive.zip App.xcarchive
-          else
-            mv build/ipa/App.ipa build/ipa/MyApp_unsigned.ipa
+            echo "❌ IPA not created. Build failed."
+            exit 1
           fi
+
+          # 5️⃣ Rename IPA
+          mv build/ipa/App.ipa build/ipa/MyApp_unsigned.ipa
 
       - name: ⬆️ Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: MyApp-Unsigned-IPA
-          path: |
-            build/ipa/MyApp_unsigned.ipa
-            build/App_unsigned_archive.zip
+          path: build/ipa/MyApp_unsigned.ipa
           retention-days: 1

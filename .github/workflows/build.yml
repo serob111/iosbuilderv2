@@ -33,7 +33,7 @@ jobs:
       - name: ➕ Add iOS Platform
         run: npx cap add ios
 
-              - name: 📸 Install ImageMagick
+      - name: 📸 Install ImageMagick
         run: brew install imagemagick
 
       - name: 🎨 Replace iOS App Icons
@@ -57,14 +57,10 @@ jobs:
             double=$(printf "%.0f" "$(echo "$size * 2" | bc)")
             triple=$(printf "%.0f" "$(echo "$size * 3" | bc)")
 
-            # 2x size
             convert icon.png -resize ${double}x${double} "$ICONS_DIR/icon-${size}@2x.png"
-
-            # 3x size
             convert icon.png -resize ${triple}x${triple} "$ICONS_DIR/icon-${size}@3x.png"
           done
 
-          # App Store required icon
           convert icon.png -resize 1024x1024 "$ICONS_DIR/Icon-AppStore-1024.png"
 
           echo "✅ Icons replaced successfully!"
@@ -83,7 +79,6 @@ jobs:
           BUILD_DIR=$(pwd)/build
           mkdir -p $BUILD_DIR
 
-          # 1️⃣ Build the .app (no signing)
           xcodebuild \
             -workspace ios/App/App.xcworkspace \
             -scheme App \
@@ -96,29 +91,24 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="" \
             DEVELOPMENT_TEAM=""
 
-          # 2️⃣ Find built .app
           APP_PATH=$(find $BUILD_DIR/Release-iphoneos -name "*.app" | head -n 1)
           if [ -z "$APP_PATH" ]; then
             echo "❌ ERROR: .app not found. Build likely failed."
             exit 1
           fi
-          echo "✅ Found app at: $APP_PATH"
 
-          # 3️⃣ Create Payload folder (structure required for .ipa)
           rm -rf Payload
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
 
-          # 4️⃣ Zip into IPA
-          zip -r MyApp_unsigned.ipa Payload
+          zip -r Parma_nel_Mondo_unsigned.ipa Payload
 
-          # 5️⃣ Move to build output
           mkdir -p build/ipa
-          mv MyApp_unsigned.ipa build/ipa/
+          mv Parma_nel_Mondo_unsigned.ipa build/ipa/
 
       - name: ⬆️ Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyApp-Unsigned-IPA
-          path: build/ipa/MyApp_unsigned.ipa
+          name: Parma-nel-Mondo-Unsigned-IPA
+          path: build/ipa/Parma_nel_Mondo_unsigned.ipa
           retention-days: 1

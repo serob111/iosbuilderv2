@@ -1,124 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Tic Tac Toe</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Fullscreen Site</title>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 50px;
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
     }
-    h1 {
-      margin-bottom: 20px;
-    }
-    .board {
-      display: grid;
-      grid-template-columns: repeat(3, 100px);
-      grid-template-rows: repeat(3, 100px);
-      gap: 5px;
-    }
-    .cell {
-      width: 100px;
-      height: 100px;
-      background-color: #f0f0f0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .cell:hover {
-      background-color: #ddd;
-    }
-    #message {
-      margin-top: 20px;
-      font-size: 20px;
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
+
+    iframe {
+      border: none;
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
     }
   </style>
 </head>
 <body>
-  <h1>Tic Tac Toe</h1>
-  <div class="board" id="board">
-    <!-- 9 cells -->
-    <div class="cell" data-index="0"></div>
-    <div class="cell" data-index="1"></div>
-    <div class="cell" data-index="2"></div>
-    <div class="cell" data-index="3"></div>
-    <div class="cell" data-index="4"></div>
-    <div class="cell" data-index="5"></div>
-    <div class="cell" data-index="6"></div>
-    <div class="cell" data-index="7"></div>
-    <div class="cell" data-index="8"></div>
-  </div>
-  <div id="message"></div>
-  <button id="restart">Restart Game</button>
-
-  <script>
-    const board = document.getElementById('board');
-    const cells = document.querySelectorAll('.cell');
-    const message = document.getElementById('message');
-    const restartBtn = document.getElementById('restart');
-
-    let currentPlayer = 'X';
-    let gameState = Array(9).fill('');
-
-    const winningCombos = [
-      [0,1,2],[3,4,5],[6,7,8], // rows
-      [0,3,6],[1,4,7],[2,5,8], // columns
-      [0,4,8],[2,4,6]          // diagonals
-    ];
-
-    function checkWinner() {
-      for (let combo of winningCombos) {
-        const [a,b,c] = combo;
-        if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
-          return gameState[a];
-        }
-      }
-      if (!gameState.includes('')) return 'Tie';
-      return null;
-    }
-
-    function handleClick(e) {
-      const index = e.target.dataset.index;
-      if (gameState[index] !== '') return;
-      gameState[index] = currentPlayer;
-      e.target.textContent = currentPlayer;
-
-      const winner = checkWinner();
-      if (winner) {
-        if (winner === 'Tie') {
-          message.textContent = "It's a tie!";
-        } else {
-          message.textContent = `Player ${winner} wins!`;
-        }
-        board.removeEventListener('click', handleClick);
-        return;
-      }
-
-      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    }
-
-    function restartGame() {
-      gameState.fill('');
-      cells.forEach(cell => cell.textContent = '');
-      message.textContent = '';
-      currentPlayer = 'X';
-      board.addEventListener('click', handleClick);
-    }
-
-    board.addEventListener('click', handleClick);
-    restartBtn.addEventListener('click', restartGame);
-  </script>
+  <iframe 
+      src="https://www.parmanelmondo.com/it/"
+      allow="fullscreen; geolocation; microphone; camera"
+  ></iframe>
 </body>
 </html>

@@ -25,13 +25,49 @@ jobs:
         run: |
           echo '{
             "appId": "com.ipa.builder",
-            "appName": "IPABuilderApp",
+            "appName": "Parma nel Mondo",
             "webDir": "www",
             "bundledWebRuntime": false
           }' > capacitor.config.json
 
       - name: ➕ Add iOS Platform
         run: npx cap add ios
+
+              - name: 📸 Install ImageMagick
+        run: brew install imagemagick
+
+      - name: 🎨 Replace iOS App Icons
+        env:
+          ICON_URL: "https://appsgeyser.io/geticon.php?widget=Parma%20nel%20Mondo_18714670&width=512"
+        run: |
+          ICONS_DIR="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+
+          echo "🔄 Downloading icon..."
+          curl -L "$ICON_URL" -o icon.png
+
+          echo "🗑 Removing old icons..."
+          rm -rf "$ICONS_DIR"
+          mkdir -p "$ICONS_DIR"
+
+          echo "🎨 Generating new iOS icons..."
+
+          sizes=(20 29 40 60 76 83.5 1024)
+
+          for size in "${sizes[@]}"; do
+            double=$(printf "%.0f" "$(echo "$size * 2" | bc)")
+            triple=$(printf "%.0f" "$(echo "$size * 3" | bc)")
+
+            # 2x size
+            convert icon.png -resize ${double}x${double} "$ICONS_DIR/icon-${size}@2x.png"
+
+            # 3x size
+            convert icon.png -resize ${triple}x${triple} "$ICONS_DIR/icon-${size}@3x.png"
+          done
+
+          # App Store required icon
+          convert icon.png -resize 1024x1024 "$ICONS_DIR/Icon-AppStore-1024.png"
+
+          echo "✅ Icons replaced successfully!"
 
       - name: 🛠️ Install CocoaPods
         run: gem install cocoapods

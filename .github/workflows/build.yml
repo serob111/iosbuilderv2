@@ -36,7 +36,7 @@ jobs:
       - name: 📸 Install ImageMagick
         run: brew install imagemagick
 
-      - name: 🎨 Replace iOS App Icons
+            - name: 🎨 Replace iOS App Icons
         env:
           ICON_URL: "https://appsgeyser.io/geticon.php?widget=Parma%20nel%20Mondo_18714670&width=512"
         run: |
@@ -51,19 +51,47 @@ jobs:
 
           echo "🎨 Generating new iOS icons..."
 
-          sizes=(20 29 40 60 76 83.5 1024)
+          sizes=(20 29 40 60 76 83.5)
+          scales=(2 3)
 
           for size in "${sizes[@]}"; do
-            double=$(printf "%.0f" "$(echo "$size * 2" | bc)")
-            triple=$(printf "%.0f" "$(echo "$size * 3" | bc)")
-
-            convert icon.png -resize ${double}x${double} "$ICONS_DIR/icon-${size}@2x.png"
-            convert icon.png -resize ${triple}x${triple} "$ICONS_DIR/icon-${size}@3x.png"
+            for scale in "${scales[@]}"; do
+              px=$(printf "%.0f" "$(echo "$size * $scale" | bc)")
+              filename="icon-${size}@${scale}x.png"
+              convert icon.png -resize ${px}x${px} "$ICONS_DIR/$filename"
+            done
           done
 
+          # App Store 1024 icon
           convert icon.png -resize 1024x1024 "$ICONS_DIR/Icon-AppStore-1024.png"
 
-          echo "✅ Icons replaced successfully!"
+          echo "📝 Creating Contents.json..."
+          cat > "$ICONS_DIR/Contents.json" <<EOF
+{
+  "images" : [
+    { "size" : "20x20", "idiom" : "iphone", "filename" : "icon-20@2x.png", "scale" : "2x" },
+    { "size" : "20x20", "idiom" : "iphone", "filename" : "icon-20@3x.png", "scale" : "3x" },
+
+    { "size" : "29x29", "idiom" : "iphone", "filename" : "icon-29@2x.png", "scale" : "2x" },
+    { "size" : "29x29", "idiom" : "iphone", "filename" : "icon-29@3x.png", "scale" : "3x" },
+
+    { "size" : "40x40", "idiom" : "iphone", "filename" : "icon-40@2x.png", "scale" : "2x" },
+    { "size" : "40x40", "idiom" : "iphone", "filename" : "icon-40@3x.png", "scale" : "3x" },
+
+    { "size" : "60x60", "idiom" : "iphone", "filename" : "icon-60@2x.png", "scale" : "2x" },
+    { "size" : "60x60", "idiom" : "iphone", "filename" : "icon-60@3x.png", "scale" : "3x" },
+
+    { "size" : "76x76", "idiom" : "ipad", "filename" : "icon-76@2x.png", "scale" : "2x" },
+    { "size" : "83.5x83.5", "idiom" : "ipad", "filename" : "icon-83.5@2x.png", "scale" : "2x" },
+
+    { "size" : "1024x1024", "idiom" : "ios-marketing", "filename" : "Icon-AppStore-1024.png", "scale" : "1x" }
+  ],
+  "info" : { "version" : 1, "author" : "xcode" }
+}
+EOF
+
+          echo "✅ Icons replaced successfully, including Contents.json!"
+
 
       - name: 🛠️ Install CocoaPods
         run: gem install cocoapods
